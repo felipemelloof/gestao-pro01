@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Pro: Relatórios</title>
+    <style>
+        :root {
+            --bg: #f0f2f5; --primario: #78350f; --secundario: #fbbf24;
+            --sucesso: #25d366; --perigo: #ef4444; --excel: #1d6f42;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+        .empresa-box { cursor: pointer; transition: 0.2s; padding: 5px; border-radius: 8px; }
+        .empresa-box:hover { background: #e2e8f0; }
+        
+        .relogio-box { background: white; padding: 10px 20px; border-radius: 12px; border: 2px solid var(--primario); text-align: right; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        #data-topo { display: block; font-size: 0.8rem; font-weight: bold; color: #64748b; text-transform: uppercase; }
+        #hora-topo { display: block; font-size: 1.4rem; font-weight: 900; color: var(--primario); }
+
+        .resumo-dia { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .card-lucro { padding: 20px; border-radius: 15px; text-align: center; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        
+        .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .painel { background: white; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; color: var(--primario); display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
+        
+        input, select { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 1rem; box-sizing: border-box; margin-bottom: 10px; }
+        input:focus { border-color: var(--secundario); outline: none; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; margin-top: 5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-lancar { background: var(--primario); color: white; }
+        .btn-uso { background: #ea580c; color: white; }
+        .btn-venda { background: #3b82f6; color: white; }
+        .btn-whatsapp { background: var(--sucesso); color: white; }
+        .btn-excel { background: var(--excel); color: white; }
+        .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 12px; color: #64748b; font-size: 0.8rem; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 14px; border-bottom: 1px solid #f1f5f9; }
+
+        .grid-precos { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 15px; }
+        .preco-tag { background: #fff9db; border: 1px solid #ffe066; padding: 8px; border-radius: 8px; font-size: 0.75rem; position: relative; }
+        .btn-del-preco { position: absolute; top: 2px; right: 2px; color: red; border: none; background: none; cursor: pointer; font-size: 10px; }
+
+        @media (max-width: 768px) { .grid-forms { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="empresa-box" onclick="configurarNomeEmpresa()">
+            <h1 id="nome-empresa" style="color: var(--primario); margin: 0;">🍩 Churros Pro</h1>
+            <p style="margin: 0; color: #64748b;">Toque para mudar o nome</p>
+        </div>
+        <div class="relogio-box">
+            <span id="data-topo">--/--/----</span>
+            <span id="hora-topo">00:00:00</span>
+        </div>
+    </header>
+
+    <div class="resumo-dia">
+        <div class="card-lucro" style="background: #3b82f6;"><span>Venda Bruta</span><div id="venda-bruta" style="font-size: 1.5rem; font-weight: bold;">R$ 0,00</div></div>
+        <div class="card-lucro" style="background: var(--perigo);"><span>Custo Insumos</span><div id="custo-total" style="font-size: 1.5rem; font-weight: bold;">R$ 0,00</div></div>
+        <div class="card-lucro" style="background: var(--sucesso);"><span>Lucro Líquido</span><div id="lucro-real" style="font-size: 1.5rem; font-weight: bold;">R$ 0,00</div></div>
+    </div>
+
+    <div class="grid-forms">
+        <div class="painel">
+            <h3>⚙️ Configurar Preços</h3>
+            <input type="text" id="p-nome" placeholder="Ex: Farinha, Doce de Leite">
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="p-peso" placeholder="Peso Total (Kg/Un)">
+                <input type="number" id="p-preco" placeholder="Valor Pago R$">
+            </div>
+            <button class="btn btn-lancar" onclick="cadastrarPreco()">Salvar Insumo</button>
+            <div id="grid-precos-lista" class="grid-precos"></div>
+        </div>
+
+        <div class="painel">
+            <h3>🛒 Uso de Hoje</h3>
+            <select id="u-insumo"></select>
+            <input type="number" id="u-qtd" step="0.01" placeholder="Qtd usada (Ex: 0.500)">
+            <button class="btn btn-uso" onclick="lancarUso()">Lançar Gasto</button>
+            
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+            
+            <h3>💰 Fechamento</h3>
+            <input type="number" id="v-total" placeholder="Total Vendido R$">
+            <button class="btn btn-venda" onclick="lancarVenda()">Finalizar Dia</button>
+            
+            <button class="btn btn-whatsapp" onclick="enviarRelatorio()">📱 WhatsApp</button>
+            <button class="btn btn-excel" onclick="exportarCSV()">📊 Exportar Excel</button>
+        </div>
+    </div>
+
+    <div class="painel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>📝 Detalhes do Consumo</h3>
+            <button onclick="limparDia()" style="padding: 5px 10px; background: #fee2e2; color: #ef4444; border: none; border-radius: 5px; cursor: pointer; font-size: 0.7rem;">RESETAR DIA</button>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Hora</th><th>Insumo</th><th>Qtd</th><th>Custo</th><th>Ação</th></tr>
+            </thead>
+            <tbody id="corpo-dia"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    let precosDB = JSON.parse(localStorage.getItem('felipe_precos')) || {};
+    let usoDia = JSON.parse(localStorage.getItem('felipe_uso_dia')) || [];
+    let faturamentoDia = parseFloat(localStorage.getItem('felipe_faturamento_dia')) || 0;
+    let nomeEmpresa = localStorage.getItem('felipe_nome_empresa') || "🍩 Churros Pro";
+
+    function atualizarRelogio() {
+        const agora = new Date();
+        document.getElementById('data-topo').innerText = agora.toLocaleDateString('pt-br', {weekday: 'long', day: '2-digit', month: '2-digit'});
+        document.getElementById('hora-topo').innerText = agora.toLocaleTimeString('pt-br');
+    }
+    setInterval(atualizarRelogio, 1000);
+
+    function configurarNomeEmpresa() {
+        const novo = prompt("Nome da Empresa/Carrinho:", nomeEmpresa);
+        if(novo) {
+            nomeEmpresa = novo;
+            localStorage.setItem('felipe_nome_empresa', nomeEmpresa);
+            renderTudo();
+        }
+    }
+
+    function cadastrarPreco() {
+        const nome = document.getElementById('p-nome').value;
+        const peso = parseFloat(document.getElementById('p-peso').value);
+        const preco = parseFloat(document.getElementById('p-preco').value);
+        if(!nome || !peso || !preco) return;
+        precosDB[nome] = (preco / peso);
+        localStorage.setItem('felipe_precos', JSON.stringify(precosDB));
+        document.getElementById('p-nome').value = ""; document.getElementById('p-peso').value = ""; document.getElementById('p-preco').value = "";
+        renderTudo();
+    }
+
+    function deletarInsumo(nome) {
+        delete precosDB[nome];
+        localStorage.setItem('felipe_precos', JSON.stringify(precosDB));
+        renderTudo();
+    }
+
+    function lancarUso() {
+        const nome = document.getElementById('u-insumo').value;
+        const qtd = parseFloat(document.getElementById('u-qtd').value);
+        if(!nome || isNaN(qtd)) return;
+        const custo = precosDB[nome] * qtd;
+        const hora = new Date().toLocaleTimeString('pt-br', {hour: '2-digit', minute:'2-digit'});
+        usoDia.unshift({ nome, qtd, custo, hora });
+        localStorage.setItem('felipe_uso_dia', JSON.stringify(usoDia));
+        document.getElementById('u-qtd').value = "";
+        renderTudo();
+    }
+
+    function lancarVenda() {
+        faturamentoDia = parseFloat(document.getElementById('v-total').value) || 0;
+        localStorage.setItem('felipe_faturamento_dia', faturamentoDia);
+        renderTudo();
+    }
+
+    function renderTudo() {
+        document.getElementById('nome-empresa').innerText = nomeEmpresa;
+        const listaPrecos = document.getElementById('grid-precos-lista');
+        const selectUso = document.getElementById('u-insumo');
+        listaPrecos.innerHTML = ""; selectUso.innerHTML = "";
+
+        for (let prod in precosDB) {
+            listaPrecos.innerHTML += `<div class="preco-tag"><b>${prod}</b><br>R$ ${precosDB[prod].toFixed(2)}/un <button class="btn-del-preco" onclick="deletarInsumo('${prod}')">X</button></div>`;
+            selectUso.innerHTML += `<option value="${prod}">${prod}</option>`;
+        }
+
+        const corpo = document.getElementById('corpo-dia');
+        corpo.innerHTML = "";
+        let custoTotal = 0;
+
+        usoDia.forEach((item, i) => {
+            custoTotal += item.custo;
+            corpo.innerHTML += `<tr><td>${item.hora}</td><td>${item.nome}</td><td>${item.qtd}</td><td style="color:red">R$ ${item.custo.toFixed(2)}</td><td><button onclick="removerUso(${i})" style="border:none; background:none; cursor:pointer;">✕</button></td></tr>`;
+        });
+
+        document.getElementById('venda-bruta').innerText = `R$ ${faturamentoDia.toFixed(2)}`;
+        document.getElementById('custo-total').innerText = `R$ ${custoTotal.toFixed(2)}`;
+        const lucro = faturamentoDia - custoTotal;
+        document.getElementById('lucro-real').innerText = `R$ ${lucro.toFixed(2)}`;
+    }
+
+    function exportarCSV() {
+        const dataAt = new Date().toLocaleDateString('pt-br').replaceAll('/', '-');
+        let csv = "sep=;\nHora;Insumo;Quantidade;Custo\n";
+        usoDia.forEach(i => { csv += `${i.hora};${i.nome};${i.qtd};${i.custo.toFixed(2).replace('.', ',')}\n`; });
+        let totalC = usoDia.reduce((a, b) => a + b.custo, 0);
+        csv += `\n;RESUMO DO DIA;;\n;Venda Bruta;;${faturamentoDia.toFixed(2).replace('.', ',')}\n;Custo Total;;${totalC.toFixed(2).replace('.', ',')}\n;Lucro Liquido;;${(faturamentoDia - totalC).toFixed(2).replace('.', ',')}`;
+        
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url; link.download = `Relatorio_${nomeEmpresa}_${dataAt}.csv`;
+        link.click();
+    }
+
+    function enviarRelatorio() {
+        let custoT = 0; let lista = "";
+        usoDia.forEach(i => { custoT += i.custo; lista += `• ${i.nome}: R$ ${i.custo.toFixed(2)}\n`; });
+        const msg = `*📊 RELATÓRIO ${nomeEmpresa.toUpperCase()}*\n*Venda:* R$ ${faturamentoDia.toFixed(2)}\n*Custo:* R$ ${custoT.toFixed(2)}\n*LUCRO:* R$ ${(faturamentoDia - custoT).toFixed(2)}\n\n*DETALHES:*\n${lista}`;
+        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    function removerUso(i) { usoDia.splice(i, 1); localStorage.setItem('felipe_uso_dia', JSON.stringify(usoDia)); renderTudo(); }
+    function limparDia() { if(confirm("Zerar dia?")) { usoDia = []; faturamentoDia = 0; localStorage.setItem('felipe_uso_dia', "[]"); localStorage.setItem('felipe_faturamento_dia', 0); renderTudo(); } }
+
+    window.onload = () => { atualizarRelogio(); renderTudo(); };
+</script>
+</body>
+</html>
